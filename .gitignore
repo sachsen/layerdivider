@@ -33,4 +33,8 @@ MANIFEST
 # Jupyter Notebook
 *.ipynb_checkpoints
 *.ipynb:Zone.Identifier
-
+.idea
+data/out.png
+input/*
+output
+segment_model/sam_vit_h_4b8939.pth

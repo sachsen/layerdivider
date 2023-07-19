@@ -1,0 +1,27 @@
+pred_iou_thresh=0.8
+stability_score_thresh=0.8
+crop_n_layers=1
+crop_n_points_downscale_factor=2
+min_mask_region_area=100
+
+segment
+
+
+divide_mode=segment_mode
+area_threshold=20000
+
+loops=1
+init_cluster=10
+ciede_threshold=5
+blur_size=5
+output_layer_mode=normal
+
+split bg=false
+horizontal sprit num=256
+vertical sprit num=256
+cluster num=500
+alpha threshold=100
+mask content ratio=0.1
+
+create psd
+

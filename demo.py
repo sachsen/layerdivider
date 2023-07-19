@@ -10,15 +10,77 @@ from ldivider.ld_segment import get_mask_generator, get_masks, show_anns
 import cv2
 from pytoshop.enums import BlendMode
 import os
+from PIL import Image, ImageFilter
 
 import numpy as np
-
+os.environ["http_proxy"] = "http://pac.mei.co.jp/proxy.pac"
 path = os.getcwd()
 output_dir = f"{path}/output"
 input_dir = f"{path}/input"
 model_dir = f"{path}/segment_model"
 
 load_seg_model(model_dir)
+class ScriptExectuion():
+    def __init__(self):
+        self.ui = webui()
+        self.img_path="input/IMG_0055.JPG"
+        self.img=Image.open(self.img_path)
+        config_path="data/parameter.txt"
+        with open(config_path) as f:
+            s = f.read()
+        s=s.split("\n")
+        lines=[]
+        for i in s:
+            if i=="":
+                continue
+            else:
+                if "=" in i:
+                    lines.append(i.split("="))
+                    if lines[-1][1].isnumeric():
+                        lines[-1][1]=int(lines[-1][1])
+                    else:
+                        try:
+                            lines[-1][1]=float(lines[-1][1])
+                        except ValueError:
+                            pass
+        print(lines)
+        self.config=lines
+    def searchProperty(self,property:str,index=False):
+        for i,p in enumerate(self.config):
+            if property in p:
+                if index:
+                    return i,p[1]
+                else:
+                    return p[1]
+
+    def segment_image(self):
+        masked_img=self.ui.segment_image(
+            self.img,
+            self.searchProperty("pred_iou_thresh"),
+            self.searchProperty("stability_score_thresh"),
+            self.searchProperty("crop_n_layers"),
+            self.searchProperty("crop_n_points_downscale_factor"),
+            self.searchProperty("min_mask_region_area"),
+        )
+        masked_img.save('data/out.png', quality=95)
+    def divide_layer(self):
+        output_0, output_1, output_2, output_3, output_file=self.ui.divide_layer(
+            self.searchProperty("divide_mode"),
+            self.img,
+            self.searchProperty("loops"),
+            self.searchProperty("init_cluster"),
+            self.searchProperty("ciede_threshold"),
+            self.searchProperty("blur_size"),
+            self.searchProperty("output_layer_mode"),
+            self.searchProperty("horizontal sprit num"),
+            self.searchProperty("vertical sprit num"),
+            self.searchProperty("cluster num"),
+            self.searchProperty("alpha threshold"),
+            self.searchProperty("mask content ratio"),
+            self.searchProperty("split bg"),
+            self.searchProperty("area_threshold"),
+        )
+
 
 class webui:
     def __init__(self):
@@ -26,9 +88,12 @@ class webui:
         
     def segment_image(self, input_image, pred_iou_thresh, stability_score_thresh, crop_n_layers, crop_n_points_downscale_factor, min_mask_region_area):
         mask_generator = get_mask_generator(pred_iou_thresh, stability_score_thresh, min_mask_region_area, model_dir, "demo")
+        print("created mask generator")
         masks = get_masks(pil2cv(input_image), mask_generator)
+        print("got mask")
         input_image.putalpha(255)
         masked_image = show_anns(input_image, masks, output_dir)
+        print("got masked img")
         return masked_image
 
     def divide_layer(self, divide_mode, input_image, loops, init_cluster, ciede_threshold, blur_size, layer_mode, h_split, v_split, n_cluster, alpha, th_rate, split_bg, area_th):
@@ -46,7 +111,7 @@ class webui:
         masks = load_masks(output_dir)
 
         df = get_seg_base(self.input_image, masks, area_th)
-
+        print("get_seg_base")
         
         base_image = cv2pil(df2bgra(df))
         image = cv2pil(image)
@@ -180,11 +245,15 @@ class webui:
 
 
 if __name__ == "__main__":
-    ui = webui()
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "share":
-            ui.launch(share=True)
-        else:
-            ui.launch(share=False)
-    else:
-        ui.launch(share=False)
+    se = ScriptExectuion()
+    #se.segment_image()
+    se.divide_layer()
+    # ui = webui()
+    #
+    # if len(sys.argv) > 1:
+    #     if sys.argv[1] == "share":
+    #         ui.launch(share=True)
+    #     else:
+    #         ui.launch(share=False)
+    # else:
+    #     ui.launch(share=False)
